@@ -46,7 +46,7 @@ for msg in st.session_state.messages:
 if len(st.session_state.messages) == 0:
     st.session_state.messages.append({
         "role": "assistant",
-        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad, estatura y peso?\n2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n1) 3)Cual es tu meta por esta consulta, explica tu caso y metas en salud?"
+        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad, estatura y peso?\n2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n1) 3)Explica tu caso clinico y metas en salud por esta consulta?"
     })
     with st.chat_message("assistant"):
         st.write(st.session_state.messages[-1]["content"])
@@ -186,7 +186,7 @@ USUARIO:
 (B) Imagen del platillo: siempre proporcionada
 
 TAREAS:
-1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario, imrpresión en pantalla de la imagen del platillo antes del titulo 1. Resumen Rápido Personalizado
+1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario.
 2. Hallazgos clave.
 3. Identificación del platillo + porción + calorías + cantidad de fibra.
 4. Recomendación dietética personalizada (tomar en cuenta IMC, tambien cantidades recomendadas).
@@ -219,10 +219,10 @@ DISCLAIMER: No sustituye una consulta médica.
 
     # Mostrar respuesta final tipo chat
     with st.chat_message("assistant"):
-        st.write(response.text)
-        # Mostrar la imagen del platillo
         st.write("**Imagen del platillo:**")
-        st.image(image2_bytes, use_column_width=True)
+        st.image(image2_bytes, use_column_width=True)  # imagen centrada
+        st.write("### 1. Resumen rápido personalizado...")
+        st.write(response.text)
 
     # Guardar en historial
     st.session_state.messages.append({"role": "assistant", "content": response.text})
