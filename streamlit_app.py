@@ -190,6 +190,13 @@ Solo texto natural en lenguaje humano, bien explicado y organizado.
 DISCLAIMER: No sustituye una consulta médica.
 """
 
+if image2 and "done" not in st.session_state:
+    st.session_state.done = True
+    image2_bytes = image2.read()
+
+    # Tu prompt EXACTO
+    prompt = """ ... """  # prompt completo
+
     with st.chat_message("assistant"):
         st.write("🧠 Analizando tus imágenes, por favor espera...")
 
