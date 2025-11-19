@@ -186,7 +186,7 @@ USUARIO:
 (B) Imagen del platillo: siempre proporcionada
 
 TAREAS:
-1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario.
+1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario, imrpresión en pantalla de la imagen del platillo antes del titulo 1. Resumen Rápido Personalizado
 2. Hallazgos clave.
 3. Identificación del platillo + porción + calorías + cantidad de fibra.
 4. Recomendación dietética personalizada (tomar en cuenta IMC, tambien cantidades recomendadas).
