@@ -151,6 +151,11 @@ if image2 and "done" not in st.session_state:
     # Imagen del platillo (siempre existe)
     imagen_platillo = {"mime_type": "image/jpeg", "data": image2_bytes}
 
+     # -----------------------
+    # EXTRAER DATOS DEL USUARIO
+    # -----------------------
+    user_data = "\n".join([msg["content"] for msg in st.session_state.messages if msg["role"]=="user"])
+
     # Prompt como texto plano (no incluir diccionarios)
     prompt = f"""
     
@@ -158,6 +163,7 @@ SISTEMA:
 Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado en base al caso clinico que el usuario cuente, metas y demas.
 
 USUARIO:
+{user_data}
 (A) Imagen del estudio clínico: opcional
 (B) Imagen del platillo: siempre proporcionada
 
@@ -209,6 +215,8 @@ DISCLAIMER: No sustituye una consulta médica.
     if imagen_estudio is not None:
         inputs.append(imagen_estudio)
     inputs.append(imagen_platillo)
+
+    response = model.generate_content(inputs)
 
     # Mostrar mensaje de espera
     with st.chat_message("assistant"):
