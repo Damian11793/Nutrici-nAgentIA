@@ -144,28 +144,24 @@ if image2 and "done" not in st.session_state:
     st.session_state.done = True
     image2_bytes = image2.read()
 
-    # -------------------------------
     # Imagen opcional del estudio clínico
-    # -------------------------------
     imagen_estudio = None
     if "image1_bytes" in st.session_state:
         imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
 
-    # -------------------------------
-    # Imagen del platillo (siempre existe aquí)
-    # -------------------------------
+    # Imagen del platillo
     imagen_platillo = {"mime_type": "image/jpeg", "data": image2_bytes}
 
-    # -------------------------------
-    # Construir prompt seguro
-    # -------------------------------
-    prompt = f"""
+    # Prompt como texto plano (no poner diccionarios dentro del string)
+    prompt = """
 SISTEMA:
-Eres un asistente multimodal experto en salud y nutrición. Cuando recibas: 
-(A) imagen de estudios clínicos de sangre y/o historial clínico en texto (opcional)
-(B) imagen de un platillo
-debes:
+Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado.
 
+USUARIO:
+(A) Imagen del estudio clínico: opcional
+(B) Imagen del platillo: siempre proporcionada
+
+TAREAS:
 1) Analizar cada entrada por separado y en conjunto.
 2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente y una conclusión breve con una puntuación de confianza (0-100).
 3) Aplicar un paso de SELF-CONSISTENCY: pedir a cada experto que reconsidere su respuesta 3 veces con pequeñas variaciones en el razonamiento; agregar una votación/consenso entre las respuestas y calcular la conclusión final y el intervalo de confianza.
@@ -186,8 +182,8 @@ RESTRICCIONES:
 
 
 USUARIO:
-(A) Imagen del estudio clínico: {imagen_estudio}
-(B) Imagen del platillo: {imagen_platillo}
+(A) Imagen del estudio clínico: opcional
+(B) Imagen del platillo: siempre proporcionada
 
 TAREAS:
 1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario.
@@ -207,30 +203,16 @@ Solo texto natural en lenguaje humano, bien explicado y organizado.
 DISCLAIMER: No sustituye una consulta médica.
 """
 
-if image2 and "done" not in st.session_state:
-    st.session_state.done = True
-    image2_bytes = image2.read()
 
-    # Determinar si hay imagen del estudio clínico
-    imagen_estudio = None
-    if "image1_bytes" in st.session_state:
-        imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
-
-    # Tu prompt EXACTO, usando la variable imagen_estudio
-    prompt = f""" ... """  # prompt completo, reemplazando {imagen_estudio} en lugar de la imagen directa
-
-    with st.chat_message("assistant"):
-        st.write("🧠 Analizando tus imágenes, por favor espera...")
-
-    # Construir lista de inputs para el modelo
+    # Construir lista de inputs
     inputs = [prompt]
-
-    # Agregar la imagen del estudio clínico solo si existe
     if imagen_estudio is not None:
         inputs.append(imagen_estudio)
+    inputs.append(imagen_platillo)
 
-    # Agregar la imagen del platillo
-    inputs.append({"mime_type": "image/jpeg", "data": image2_bytes})
+    # Mostrar mensaje de espera
+    with st.chat_message("assistant"):
+        st.write("🧠 Analizando tus imágenes, por favor espera...")
 
     # Llamada al modelo
     response = model.generate_content(inputs)
@@ -239,5 +221,5 @@ if image2 and "done" not in st.session_state:
     with st.chat_message("assistant"):
         st.write(response.text)
 
-    # Guardar en el historial
+    # Guardar en historial
     st.session_state.messages.append({"role": "assistant", "content": response.text})
