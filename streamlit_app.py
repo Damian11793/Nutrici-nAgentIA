@@ -144,10 +144,18 @@ if image2 and "done" not in st.session_state:
     st.session_state.done = True
     image2_bytes = image2.read()
 
-    # Tu prompt EXACTO
-    prompt = """
+    # Aquí es donde hay que construir el prompt de forma segura
+    # para que la imagen del estudio clínico sea opcional:
+    imagen_estudio = None
+    if "image1_bytes" in st.session_state:
+        imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
+
+    prompt = f"""
 SISTEMA:
-Eres un asistente multimodal experto en salud y nutrición. Cuando recibas: (A) imagen de estudios clínicos de sangre y/o historial clínico en texto que no es obligatorio subir preguntar si se subira y (B) imagen de un platillo, debes:
+Eres un asistente multimodal experto en salud y nutrición. Analiza las imágenes recibidas.
+USUARIO:
+(A) Imagen del estudio clínico: { 'subida' if imagen_estudio else 'No proporcionada' } imagen de estudios clínicos de sangre y/o historial clínico en texto que no es obligatorio subir preguntar si se subira 
+(B) imagen de un platillo, debes:
 
 1) Analizar cada entrada por separado y en conjunto.
 2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente y una conclusión breve con una puntuación de confianza (0-100).
