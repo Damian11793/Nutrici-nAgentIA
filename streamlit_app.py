@@ -29,7 +29,7 @@ model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 # ------------------------------
 st.set_page_config(page_title="Nutri-Asistente IA", layout="centered")
 st.title("🧠 Nutri-Asistente Multimodal IA")
-st.write("Sube tu estudio clínico + platillo y obtén un análisis personalizado.")
+st.write("Sube tu estudio clínico + platillo y describe tu caso clínico y tus metas y obtén un análisis personalizado.")
 
 # Para simular conversación tipo ChatGPT
 if "messages" not in st.session_state:
@@ -136,7 +136,6 @@ else:
 image2 = None
 if "study_uploaded" in st.session_state:
     image2 = st.file_uploader("Sube tu platillo", type=["jpg", "jpeg", "png"], key="food_uploader")
-
 # ----------------------------------------------------------
 # PASO 3: LLAMADA AL MODELO
 # ----------------------------------------------------------
@@ -149,11 +148,12 @@ if image2 and "done" not in st.session_state:
     if "image1_bytes" in st.session_state:
         imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
 
-    # Imagen del platillo
+    # Imagen del platillo (siempre existe)
     imagen_platillo = {"mime_type": "image/jpeg", "data": image2_bytes}
 
-    # Prompt como texto plano (no poner diccionarios dentro del string)
-    prompt = """
+    # Prompt como texto plano (no incluir diccionarios)
+    prompt = f"""
+    
 SISTEMA:
 Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado.
 
@@ -163,7 +163,7 @@ USUARIO:
 
 TAREAS:
 1) Analizar cada entrada por separado y en conjunto.
-2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente y una conclusión breve con una puntuación de confianza (0-100).
+2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente personalizado para las metas del usuario si es que las proporciono y una conclusión breve con una puntuación de confianza (0-100).
 3) Aplicar un paso de SELF-CONSISTENCY: pedir a cada experto que reconsidere su respuesta 3 veces con pequeñas variaciones en el razonamiento; agregar una votación/consenso entre las respuestas y calcular la conclusión final y el intervalo de confianza.
 4) Producir una respuesta final clara, accionable y estructurada para el usuario final, con:
    - Diagnóstico/observaciones clave del estudio clínico (A)
