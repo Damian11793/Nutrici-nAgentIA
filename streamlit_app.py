@@ -19,8 +19,6 @@ import io
 # ------------------------------
 genai.configure(api_key="AIzaSyAbzZHK_i2U0u0CwEmpLqTndGXcc6TKbYE")
 
-#genai.configure(api_key=st.secrets["AIzaSyAvceZtL7I0ZEwurKtDkePN2Dj77xcDfZ4"])
-
 # ------------------------------
 # MODELO
 # ------------------------------
@@ -48,7 +46,7 @@ for msg in st.session_state.messages:
 if len(st.session_state.messages) == 0:
     st.session_state.messages.append({
         "role": "assistant",
-        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad?\n2) ¿Tienes antecedentes como diabetes, hipertensión o colesterol alto?"
+        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad, estatura y peso?\n2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica? 3)Cual es tu meta por esta consulta, explica tu caso y metas en salud?"
     })
     with st.chat_message("assistant"):
         st.write(st.session_state.messages[-1]["content"])
@@ -66,22 +64,27 @@ if user_input:
 
 
 # ----------------------------------------------------------
-# PASO 1: EL ASISTENTE PIDE LA IMAGEN DEL ESTUDIO CLÍNICO
+# PASO 1: EL ASISTENTE PIDE LA IMAGEN DEL ESTUDIO CLÍNICO (opcional)
 # ----------------------------------------------------------
 if "info_ok" not in st.session_state and len(st.session_state.messages) >= 2:
     st.session_state.info_ok = True
     with st.chat_message("assistant"):
-        st.write("Perfecto. Ahora por favor **sube la imagen de tu estudio clínico (foto o PDF en imagen).**")
+        st.write("Perfecto. Si tienes un estudio clínico, **puedes subir la imagen o PDF (opcional).** Si no, puedes continuar sin subirlo.")
 
-# Subida de estudio clínico
-image1 = st.file_uploader("Sube tu estudio clínico", type=["jpg", "jpeg", "png"], key="study_uploader")
+# Subida opcional de estudio clínico
+image1 = st.file_uploader("Sube tu estudio clínico (opcional)", type=["jpg", "jpeg", "png"], key="study_uploader")
 
-if image1 and "study_uploaded" not in st.session_state:
+# Botón para continuar si no se desea subir
+skip_upload = st.button("Continuar sin subir estudio clínico")
+
+if (image1 or skip_upload) and "study_uploaded" not in st.session_state:
     st.session_state.study_uploaded = True
-    st.session_state.image1_bytes = image1.read()
+    if image1:
+        st.session_state.image1_bytes = image1.read()
     st.session_state.messages.append({"role": "assistant", "content": "Gracias. Ahora sube la **imagen del platillo** que deseas analizar."})
     with st.chat_message("assistant"):
         st.write("Gracias. Ahora sube la **imagen del platillo** que deseas analizar.")
+
 
 # ----------------------------------------------------------
 # PASO 2: EL ASISTENTE PIDE LA IMAGEN DEL PLATILLO
@@ -126,7 +129,7 @@ USUARIO:
 (B) Imagen del platillo: {imagen_platillo}
 
 TAREAS:
-1. Resumen rápido.
+1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario.
 2. Hallazgos clave.
 3. Identificación del platillo + porción + calorías + cantidad de fibra.
 4. Recomendación dietética personalizada (tomar en cuenta IMC, tambien cantidades recomendadas).
