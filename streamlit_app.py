@@ -220,6 +220,9 @@ DISCLAIMER: No sustituye una consulta médica.
     # Mostrar respuesta final tipo chat
     with st.chat_message("assistant"):
         st.write(response.text)
+        # Mostrar la imagen del platillo
+        st.write("**Imagen del platillo:**")
+        st.image(image2_bytes, use_column_width=True)
 
     # Guardar en historial
     st.session_state.messages.append({"role": "assistant", "content": response.text})
