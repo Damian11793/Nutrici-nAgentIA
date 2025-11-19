@@ -119,6 +119,7 @@ RESTRICCIONES:
 - No asumas diagnósticos definitivos; usa lenguaje de probabilidad.
 - Si el contenido indica peligro inmediato, indica “Buscar atención médica urgente”.
 - Referencias solo si se piden.
+- No necesariamente se debe pedir el estudio clinico, preguntar si lo tienes o no
 
 USUARIO:
 (A) Imagen del estudio clínico: {imagen_estudio}
@@ -134,7 +135,10 @@ TAREAS:
 7. Conclusión final + preguntas pendientes.
 
 ENTREGABLE:
-Texto para usuario + JSON con: summary, findings, dish_identification, calories_estimate, nutrition_summary, recommendations, modifications, expert_votes, global_confidence, follow_up_questions.
+Responde únicamente con un texto claro y estructurado para el usuario. 
+NO incluyas JSON, NO incluyas formato de datos, NO incluyas listas tipo JSON.
+Solo texto natural en lenguaje humano, bien explicado y organizado.
+
 
 DISCLAIMER: No sustituye una consulta médica.
 """
