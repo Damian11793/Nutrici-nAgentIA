@@ -194,23 +194,33 @@ if image2 and "done" not in st.session_state:
     st.session_state.done = True
     image2_bytes = image2.read()
 
-    # Tu prompt EXACTO
-    prompt = """ ... """  # prompt completo
+    # Determinar si hay imagen del estudio clínico
+    imagen_estudio = None
+    if "image1_bytes" in st.session_state:
+        imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
+
+    # Tu prompt EXACTO, usando la variable imagen_estudio
+    prompt = f""" ... """  # prompt completo, reemplazando {imagen_estudio} en lugar de la imagen directa
 
     with st.chat_message("assistant"):
         st.write("🧠 Analizando tus imágenes, por favor espera...")
 
+    # Construir lista de inputs para el modelo
+    inputs = [prompt]
+
+    # Agregar la imagen del estudio clínico solo si existe
+    if imagen_estudio is not None:
+        inputs.append(imagen_estudio)
+
+    # Agregar la imagen del platillo
+    inputs.append({"mime_type": "image/jpeg", "data": image2_bytes})
+
     # Llamada al modelo
-    response = model.generate_content(
-        [
-            prompt,
-            {"mime_type": "image/jpeg", "data": st.session_state.get("image1_bytes")},
-            {"mime_type": "image/jpeg", "data": image2_bytes}
-        ]
-    )
+    response = model.generate_content(inputs)
 
     # Mostrar respuesta final tipo chat
     with st.chat_message("assistant"):
         st.write(response.text)
 
+    # Guardar en el historial
     st.session_state.messages.append({"role": "assistant", "content": response.text})
