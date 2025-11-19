@@ -154,7 +154,7 @@ if image2 and "done" not in st.session_state:
 SISTEMA:
 Eres un asistente multimodal experto en salud y nutrición. Analiza las imágenes recibidas.
 USUARIO:
-(A) Imagen del estudio clínico: { 'subida' if imagen_estudio else 'No proporcionada' } imagen de estudios clínicos de sangre y/o historial clínico en texto que no es obligatorio subir preguntar si se subira 
+(A) Imagen del estudio clínico: { 'subida' if imagen_estudio else 'No proporcionada' } 
 (B) imagen de un platillo, debes:
 
 1) Analizar cada entrada por separado y en conjunto.
