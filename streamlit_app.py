@@ -66,24 +66,43 @@ if user_input:
 # ----------------------------------------------------------
 # PASO 1: EL ASISTENTE PIDE LA IMAGEN DEL ESTUDIO CLÍNICO (opcional)
 # ----------------------------------------------------------
+
+# Mostrar mensaje del asistente solo si no se ha mostrado
 if "info_ok" not in st.session_state and len(st.session_state.messages) >= 2:
     st.session_state.info_ok = True
     with st.chat_message("assistant"):
-        st.write("Perfecto. Si tienes un estudio clínico, **puedes subir la imagen o PDF (opcional).** Si no, puedes continuar sin subirlo.")
+        st.write("Perfecto. Antes de continuar, necesitamos algunos datos tuyos. Una vez que los envíes, podrás subir tu estudio clínico (opcional).")
 
-# Subida opcional de estudio clínico
-image1 = st.file_uploader("Sube tu estudio clínico (opcional)", type=["jpg", "jpeg", "png"], key="study_uploader")
+# Revisar si el usuario ya respondió al mensaje anterior
+# Suponiendo que los mensajes tienen la estructura: {"role": "user", "content": "..."}
+last_user_message = None
+for msg in reversed(st.session_state.messages):
+    if msg["role"] == "user":
+        last_user_message = msg["content"]
+        break
 
-# Botón para continuar si no se desea subir
-skip_upload = st.button("Continuar sin subir estudio clínico")
-
-if (image1 or skip_upload) and "study_uploaded" not in st.session_state:
-    st.session_state.study_uploaded = True
-    if image1:
-        st.session_state.image1_bytes = image1.read()
-    st.session_state.messages.append({"role": "assistant", "content": "Gracias. Ahora sube la **imagen del platillo** que deseas analizar."})
+# Solo mostrar uploader y botón si el usuario ya dio la entrada
+if last_user_message and "study_uploaded" not in st.session_state:
     with st.chat_message("assistant"):
-        st.write("Gracias. Ahora sube la **imagen del platillo** que deseas analizar.")
+        st.write("Ahora, si tienes un estudio clínico, **puedes subir la imagen o PDF (opcional).** Si no, puedes continuar sin subirlo.")
+
+    # Subida opcional de estudio clínico
+    image1 = st.file_uploader("Sube tu estudio clínico (opcional)", type=["jpg", "jpeg", "png"], key="study_uploader")
+
+    # Botón para continuar si no se desea subir
+    skip_upload = st.button("Continuar sin subir estudio clínico")
+
+    if image1 or skip_upload:
+        st.session_state.study_uploaded = True
+        if image1:
+            st.session_state.image1_bytes = image1.read()
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": "Gracias. Ahora sube la **imagen del platillo** que deseas analizar."
+        })
+        with st.chat_message("assistant"):
+            st.write("Gracias. Ahora sube la **imagen del platillo** que deseas analizar.")
+
 
 
 # ----------------------------------------------------------
