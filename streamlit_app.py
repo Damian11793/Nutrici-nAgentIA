@@ -29,7 +29,7 @@ model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 # ------------------------------
 st.set_page_config(page_title="Nutri-Asistente IA", layout="centered")
 st.title("🧠 Nutri-Asistente Multimodal IA")
-st.write("Sube tu estudio clínico + platillo y describe tu caso clínico y tus metas y obtén un análisis personalizado.")
+st.write("Sube tu estudio clínico + platillo + descripción de tu caso clínico con tus metas y obtén un análisis personalizado.")
 
 # Para simular conversación tipo ChatGPT
 if "messages" not in st.session_state:
