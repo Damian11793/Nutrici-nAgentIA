@@ -110,7 +110,7 @@ if last_user_message and "study_uploaded" not in st.session_state:
         else:
             with st.chat_message("assistant"):
                 st.write(
-                    "No se subió estudio clínico. Ahora sube la **imagen del platillo** que deseas analizar."
+                    "No se subió estudio clínico. Por favor espera...."
                 )
 
         st.session_state.messages.append({
