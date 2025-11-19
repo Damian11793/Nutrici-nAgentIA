@@ -197,7 +197,7 @@ DISCLAIMER: No sustituye una consulta médica.
     response = model.generate_content(
         [
             prompt,
-            {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes},
+            {"mime_type": "image/jpeg", "data": st.session_state.get("image1_bytes")},
             {"mime_type": "image/jpeg", "data": image2_bytes}
         ]
     )
