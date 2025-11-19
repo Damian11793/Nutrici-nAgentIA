@@ -155,7 +155,7 @@ if image2 and "done" not in st.session_state:
     prompt = f"""
     
 SISTEMA:
-Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado.
+Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado en base al caso clinico que el usuario cuente, metas y demas.
 
 USUARIO:
 (A) Imagen del estudio clínico: opcional
