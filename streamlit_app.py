@@ -151,11 +151,14 @@ if image2 and "done" not in st.session_state:
         imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
 
     prompt = f"""
+    
 SISTEMA:
 Eres un asistente multimodal experto en salud y nutrición. Analiza las imágenes recibidas.
 USUARIO:
 (A) Imagen del estudio clínico: { 'subida' if imagen_estudio else 'No proporcionada' } 
-(B) imagen de un platillo, debes:
+(B) Imagen del platillo: {'subida' if imagen_platillo else 'No proporcionada'}
+
+debes:
 
 1) Analizar cada entrada por separado y en conjunto.
 2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente y una conclusión breve con una puntuación de confianza (0-100).
