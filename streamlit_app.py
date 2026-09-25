@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """streamlit_app.py
 
-Asistente Multimodal Nutricional con Streamlit y Gemini API
+Asistente Multimodal Nutricional con Streamlit y Gemini API (Multilingüe: Español / English)
 """
 
 import io
@@ -28,14 +28,53 @@ else:
 model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 
 # ------------------------------
-# INTERFAZ
+# INTERFAZ & SELECCIÓN DE IDIOMA
 # ------------------------------
 st.set_page_config(page_title="Nutri-Asistente IA", layout="centered")
-st.title("🧠 Nutri-Asistente Multimodal IA")
-st.write(
-    "Sube tu estudio clínico (opcional) + platillo (opcional) + descripción de "
-    "tu caso clínico con tus metas y obtén un análisis personalizado."
-)
+
+# Selector de idioma en la barra lateral
+with st.sidebar:
+    st.header("🌐 Idioma / Language")
+    lang = st.radio("Selecciona tu idioma / Select your language:", ["Español", "English"])
+
+is_es = lang == "Español"
+
+# Textos dinámicos según idioma
+texts = {
+    "title": "🧠 Nutri-Asistente Multimodal IA" if is_es else "🧠 Multimodal AI Nutri-Assistant",
+    "subtitle": (
+        "Sube tu estudio clínico (opcional) + platillo (opcional) + descripción de tu caso clínico con tus metas y obtén un análisis personalizado."
+        if is_es
+        else "Upload your lab test (optional) + meal photo (optional) + clinical description with your goals to receive a personalized analysis."
+    ),
+    "welcome_msg": (
+        "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n"
+        "1) ¿Cuál es tu edad, estatura y peso?\n"
+        "2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n"
+        "3) Explica tu caso clínico y metas en salud por esta consulta."
+        if is_es
+        else "👋 Hello! I am your health and nutrition assistant. To start:\n"
+        "1) What is your age, height, and weight?\n"
+        "2) Do you have any condition like diabetes, hypertension, high cholesterol, or other chronic disease?\n"
+        "3) Explain your clinical case and health goals for this consultation."
+    ),
+    "input_placeholder": "Escribe tu respuesta..." if is_es else "Type your response...",
+    "study_prompt": "Si tienes un **estudio clínico**, puedes subirlo a continuación (opcional)." if is_es else "If you have a **lab test/clinical study**, you can upload it below (optional).",
+    "study_uploader_label": "Sube tu estudio clínico (opcional)" if is_es else "Upload your lab test (optional)",
+    "skip_study_btn": "Continuar sin subir estudio clínico" if is_es else "Continue without lab test",
+    "food_prompt": (
+        "Ahora, si lo deseas, puedes subir una **imagen de tu platillo** (opcional) o presionar el botón para realizar el análisis directamente."
+        if is_es
+        else "Now, if you wish, you can upload a **photo of your meal** (optional) or press the button to analyze directly."
+    ),
+    "food_uploader_label": "Sube tu platillo (opcional)" if is_es else "Upload your meal (optional)",
+    "skip_food_btn": "Continuar sin subir platillo / Analizar ahora" if is_es else "Continue without meal photo / Analyze now",
+    "processing": "🧠 Procesando la información y generando tu análisis..." if is_es else "🧠 Processing information and generating your analysis...",
+    "dish_img_label": "**Imagen del platillo analizado:**" if is_es else "**Analyzed meal image:**",
+}
+
+st.title(texts["title"])
+st.write(texts["subtitle"])
 
 # Para simular conversación tipo ChatGPT
 if "messages" not in st.session_state:
@@ -52,12 +91,7 @@ for msg in st.session_state.messages:
 if len(st.session_state.messages) == 0:
     st.session_state.messages.append({
         "role": "assistant",
-        "content": (
-            "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n"
-            "1) ¿Cuál es tu edad, estatura y peso?\n"
-            "2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n"
-            "3) Explica tu caso clínico y metas en salud por esta consulta."
-        ),
+        "content": texts["welcome_msg"],
     })
     with st.chat_message("assistant"):
         st.write(st.session_state.messages[-1]["content"])
@@ -65,10 +99,9 @@ if len(st.session_state.messages) == 0:
 # ----------------------------------------
 # INPUT DEL USUARIO
 # ----------------------------------------
-user_input = st.chat_input("Escribe tu respuesta...")
+user_input = st.chat_input(texts["input_placeholder"])
 
 if user_input:
-    # Guardar mensaje
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.write(user_input)
@@ -84,16 +117,14 @@ for msg in reversed(st.session_state.messages):
 
 if last_user_message and "study_step_done" not in st.session_state:
     with st.chat_message("assistant"):
-        st.write(
-            "Si tienes un **estudio clínico**, puedes subirlo a continuación (opcional)."
-        )
+        st.write(texts["study_prompt"])
 
     image1 = st.file_uploader(
-        "Sube tu estudio clínico (opcional)",
+        texts["study_uploader_label"],
         type=["jpg", "jpeg", "png"],
         key="study_uploader",
     )
-    skip_study = st.button("Continuar sin subir estudio clínico")
+    skip_study = st.button(texts["skip_study_btn"])
 
     if image1 or skip_study:
         st.session_state.study_step_done = True
@@ -106,17 +137,14 @@ if last_user_message and "study_step_done" not in st.session_state:
 # ----------------------------------------------------------
 if "study_step_done" in st.session_state and "done" not in st.session_state:
     with st.chat_message("assistant"):
-        st.write(
-            "Ahora, si lo deseas, puedes subir una **imagen de tu platillo** "
-            "(opcional) o presionar el botón para realizar el análisis directamente."
-        )
+        st.write(texts["food_prompt"])
 
     image2 = st.file_uploader(
-        "Sube tu platillo (opcional)",
+        texts["food_uploader_label"],
         type=["jpg", "jpeg", "png"],
         key="food_uploader",
     )
-    skip_food = st.button("Continuar sin subir platillo / Analizar ahora")
+    skip_food = st.button(texts["skip_food_btn"])
 
     if image2 or skip_food:
         st.session_state.done = True
@@ -134,34 +162,38 @@ if "study_step_done" in st.session_state and "done" not in st.session_state:
         tiene_estudio = "image1_bytes" in st.session_state
         tiene_platillo = "image2_bytes" in st.session_state
 
+        target_language = "Spanish" if is_es else "English"
+
         prompt = f"""
-SISTEMA:
-Eres un asistente multimodal experto en salud y nutrición. Analiza los datos del usuario, el estudio clínico (si se incluye) y el platillo (si se incluye), y produce un reporte detallado en base al caso clínico, metas y métricas compartidas.
+SYSTEM:
+You are an expert multimodal health and nutrition assistant. Analyze the user's information, lab tests (if provided), and meal image (if provided). Generate a comprehensive report tailored to their clinical case, metrics, and goals.
 
-USUARIO:
+IMPORTANT: Response language MUST BE STRICTLY IN {target_language}.
+
+USER DATA:
 {user_data}
-(A) Imagen del estudio clínico: {"Proporcionada" if tiene_estudio else "No proporcionada"}
-(B) Imagen del platillo: {"Proporcionada" if tiene_platillo else "No proporcionada"}
+(A) Clinical study image: {"Provided" if tiene_estudio else "Not provided"}
+(B) Meal image: {"Provided" if tiene_platillo else "Not provided"}
 
-TAREAS:
-1. Analizar la información disponible.
-2. Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y Calculador de Porciones/Dietas) que emitan su análisis independiente adaptado a las metas indicadas.
-3. Aplicar SELF-CONSISTENCY: pedir a cada experto reconsiderar la evaluación y generar un consenso con intervalo/nivel de confianza.
-4. Generar un informe estructurado claro, accionable y humano con:
-   - Resumen rápido personalizado considerando IMC y métricas de salud.
-   - Hallazgos clave e interpretación de estudios (si se enviaron).
-   - Identificación del platillo, estimación de porciones, calorías, macronutrientes y fibra (si se envió imagen).
-   - Recomendación dietética personalizada acorde a metas e historial.
-   - Sugerencias de ajustes en la alimentación/platillo.
-   - Puntuaciones por experto y análisis multidisciplinario.
-   - Conclusión final y preguntas pendientes sobre datos faltantes.
+TASKS:
+1. Analyze available data carefully.
+2. Internally invoke several specialized "experts" (Nutrition, Cardiology, Endocrinology, Internal Medicine, Portion/Diet Calculator) to provide independent evaluations based on user goals.
+3. Apply SELF-CONSISTENCY: have each expert reconsider their initial feedback and build a consensus with a confidence score/range.
+4. Output a clear, actionable, and human-friendly structured report with:
+   - Personal summary considering BMI and health metrics.
+   - Key findings & lab test interpretation (if provided).
+   - Meal identification, portion estimation, calories, macros, and fiber content (if image provided).
+   - Personalized dietary recommendation tailored to goals and history.
+   - Suggested dietary/meal adjustments.
+   - Expert scores & multidisciplinary breakdown.
+   - Final conclusion and follow-up questions for missing data.
 
-RESTRICCIONES:
-- Lenguaje probabilístico, no diagnósticos definitivos.
-- Si detectas urgencia clínica, indica "Buscar atención médica urgente".
-- Formato en texto natural estructurado. NO JSON.
+CONSTRAINTS:
+- Use probabilistic language, avoid definitive medical diagnoses.
+- If urgent clinical flags are detected, state "Seek urgent medical attention".
+- Natural text output only. NO JSON.
 
-DISCLAIMER: No sustituye una consulta médica.
+DISCLAIMER: Does not replace a professional medical consultation.
 """
 
         inputs = [prompt]
@@ -177,13 +209,13 @@ DISCLAIMER: No sustituye una consulta médica.
             )
 
         with st.chat_message("assistant"):
-            st.write("🧠 Procesando la información y generando tu análisis...")
+            st.write(texts["processing"])
 
         response = model.generate_content(inputs)
 
         with st.chat_message("assistant"):
             if tiene_platillo:
-                st.write("**Imagen del platillo analizado:**")
+                st.write(texts["dish_img_label"])
                 st.image(st.session_state.image2_bytes, use_column_width=True)
             st.write(response.text)
 
