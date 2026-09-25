@@ -76,25 +76,27 @@ texts = {
 st.title(texts["title"])
 st.write(texts["subtitle"])
 
-# Para simular conversación tipo ChatGPT
+# Inicializar historial de conversación
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Mostrar historial de mensajes
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-
 # ----------------------------------------
-# PRIMER MENSAJE DEL ASISTENTE
+# GESTIÓN DEL MENSAJE DE BIENVENIDA DINÁMICO
 # ----------------------------------------
+# Si es el primer mensaje o solo existe la bienvenida, actualiza el mensaje al idioma actual
 if len(st.session_state.messages) == 0:
     st.session_state.messages.append({
         "role": "assistant",
         "content": texts["welcome_msg"],
     })
-    with st.chat_message("assistant"):
-        st.write(st.session_state.messages[-1]["content"])
+elif len(st.session_state.messages) == 1 and st.session_state.messages[0]["role"] == "assistant":
+    # Actualiza el mensaje inicial si el usuario solo ha cambiado de idioma sin responder aún
+    st.session_state.messages[0]["content"] = texts["welcome_msg"]
+
+# Mostrar historial de mensajes
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
 
 # ----------------------------------------
 # INPUT DEL USUARIO
