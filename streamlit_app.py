@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/13qIZdJzkR3kwhoi4Ku71-dtQekV5a_xI
 """
 
-
-
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
@@ -29,7 +27,7 @@ model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 # ------------------------------
 st.set_page_config(page_title="Nutri-Asistente IA", layout="centered")
 st.title("🧠 Nutri-Asistente Multimodal IA")
-st.write("Sube tu estudio clínico + platillo + descripción de tu caso clínico con tus metas y obtén un análisis personalizado.")
+st.write("Sube tu estudio clínico (opcional) + platillo (opcional) + descripción de tu caso clínico con tus metas y obtén un análisis personalizado.")
 
 # Para simular conversación tipo ChatGPT
 if "messages" not in st.session_state:
@@ -46,7 +44,7 @@ for msg in st.session_state.messages:
 if len(st.session_state.messages) == 0:
     st.session_state.messages.append({
         "role": "assistant",
-        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad, estatura y peso?\n2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n1) 3)Explica tu caso clinico y metas en salud por esta consulta?"
+        "content": "👋 Hola, soy tu asistente de salud y nutrición. Para comenzar:\n1) ¿Cuál es tu edad, estatura y peso?\n2) ¿Tienes antecedentes como diabetes, hipertensión, colesterol alto o alguna otra enfermedad crónica?\n3) Explica tu caso clínico y metas en salud por esta consulta."
     })
     with st.chat_message("assistant"):
         st.write(st.session_state.messages[-1]["content"])
@@ -62,175 +60,99 @@ if user_input:
     with st.chat_message("user"):
         st.write(user_input)
 
-
 # ----------------------------------------------------------
-# PASO 1: EL ASISTENTE PIDE LA IMAGEN DEL ESTUDIO CLÍNICO (opcional)
+# PASO 1: SUBIDA DEL ESTUDIO CLÍNICO (OPCIONAL)
 # ----------------------------------------------------------
-
-# Mostrar mensaje del asistente solo si no se ha mostrado
-if "info_ok" not in st.session_state and len(st.session_state.messages) >= 2:
-    st.session_state.info_ok = True
-    with st.chat_message("assistant"):
-        st.write(
-            "Perfecto. Antes de continuar, necesitamos algunos datos tuyos. "
-            "Una vez que los envíes, podrás subir tu estudio clínico (opcional)."
-        )
-
-# Revisar si el usuario ya respondió al mensaje anterior
 last_user_message = None
 for msg in reversed(st.session_state.messages):
     if msg["role"] == "user":
         last_user_message = msg["content"]
         break
 
-# Solo mostrar uploader y botón si el usuario ya dio la entrada
-if last_user_message and "study_uploaded" not in st.session_state:
+if last_user_message and "study_step_done" not in st.session_state:
     with st.chat_message("assistant"):
-        st.write(
-            "Ahora, si tienes un estudio clínico, **puedes subir la imagen o PDF (opcional).** "
-            "Si no, puedes continuar sin subirlo."
-        )
+        st.write("Si tienes un **estudio clínico**, puedes subirlo a continuación (opcional).")
 
-    # Subida opcional de estudio clínico
     image1 = st.file_uploader(
         "Sube tu estudio clínico (opcional)", type=["jpg", "jpeg", "png"], key="study_uploader"
     )
+    skip_study = st.button("Continuar sin subir estudio clínico")
 
-    # Botón para continuar si no se desea subir
-    skip_upload = st.button("Continuar sin subir estudio clínico")
-
-    if image1 or skip_upload:
-        st.session_state.study_uploaded = True
+    if image1 or skip_study:
+        st.session_state.study_step_done = True
         if image1:
             st.session_state.image1_bytes = image1.read()
-            with st.chat_message("assistant"):
-                st.write(
-                    "Gracias. Ahora sube la **imagen del platillo** que deseas analizar."
-                )
-        else:
-            with st.chat_message("assistant"):
-                st.write(
-                    "No se subió estudio clínico. Por favor espera...."
-                )
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": "Ahora sube la imagen del platillo."
-        })
+        st.experimental_rerun()
 
 # ----------------------------------------------------------
-# USO SEGURO DE image1_bytes MÁS ADELANTE
+# PASO 2: SUBIDA DEL PLATILLO (OPCIONAL) Y GENERACIÓN DE RESPUESTA
 # ----------------------------------------------------------
-# Ejemplo de cómo acceder sin error:
-if "image1_bytes" in st.session_state:
-    image_data = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
-else:
-    image_data = None  # manejar caso cuando no se subió estudio
+if "study_step_done" in st.session_state and "done" not in st.session_state:
+    with st.chat_message("assistant"):
+        st.write("Ahora, si lo deseas, puedes subir una **imagen de tu platillo** (opcional) o presionar el botón para realizar el análisis directamente.")
 
+    image2 = st.file_uploader("Sube tu platillo (opcional)", type=["jpg", "jpeg", "png"], key="food_uploader")
+    skip_food = st.button("Continuar sin subir platillo / Analizar ahora")
 
+    if image2 or skip_food:
+        st.session_state.done = True
+        if image2:
+            st.session_state.image2_bytes = image2.read()
 
+        # Extraer datos del usuario
+        user_data = "\n".join([msg["content"] for msg in st.session_state.messages if msg["role"] == "user"])
 
-# ----------------------------------------------------------
-# PASO 2: EL ASISTENTE PIDE LA IMAGEN DEL PLATILLO
-# ----------------------------------------------------------
-image2 = None
-if "study_uploaded" in st.session_state:
-    image2 = st.file_uploader("Sube tu platillo", type=["jpg", "jpeg", "png"], key="food_uploader")
-# ----------------------------------------------------------
-# PASO 3: LLAMADA AL MODELO
-# ----------------------------------------------------------
-if image2 and "done" not in st.session_state:
-    st.session_state.done = True
-    image2_bytes = image2.read()
+        # Determinar disponibilidad de imágenes
+        tiene_estudio = "image1_bytes" in st.session_state
+        tiene_platillo = "image2_bytes" in st.session_state
 
-    # Imagen opcional del estudio clínico
-    imagen_estudio = None
-    if "image1_bytes" in st.session_state:
-        imagen_estudio = {"mime_type": "image/jpeg", "data": st.session_state.image1_bytes}
-
-    # Imagen del platillo (siempre existe)
-    imagen_platillo = {"mime_type": "image/jpeg", "data": image2_bytes}
-
-     # -----------------------
-    # EXTRAER DATOS DEL USUARIO
-    # -----------------------
-    user_data = "\n".join([msg["content"] for msg in st.session_state.messages if msg["role"]=="user"])
-
-    # Prompt como texto plano (no incluir diccionarios)
-    prompt = f"""
-    
+        prompt = f"""
 SISTEMA:
-Eres un asistente multimodal experto en salud y nutrición. Analiza el estudio clínico si existe y el platillo, y produce un reporte detallado en base al caso clinico que el usuario cuente, metas y demas.
+Eres un asistente multimodal experto en salud y nutrición. Analiza los datos del usuario, el estudio clínico (si se incluye) y el platillo (si se incluye), y produce un reporte detallado en base al caso clínico, metas y métricas compartidas.
 
 USUARIO:
 {user_data}
-(A) Imagen del estudio clínico: opcional
-(B) Imagen del platillo: siempre proporcionada
+(A) Imagen del estudio clínico: {"Proporcionada" if tiene_estudio else "No proporcionada"}
+(B) Imagen del platillo: {"Proporcionada" if tiene_platillo else "No proporcionada"}
 
 TAREAS:
-1) Analizar cada entrada por separado y en conjunto.
-2) Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y un Calculador de Porciones) que emitan su análisis independiente personalizado para las metas del usuario si es que las proporciono y una conclusión breve con una puntuación de confianza (0-100).
-3) Aplicar un paso de SELF-CONSISTENCY: pedir a cada experto que reconsidere su respuesta 3 veces con pequeñas variaciones en el razonamiento; agregar una votación/consenso entre las respuestas y calcular la conclusión final y el intervalo de confianza.
-4) Producir una respuesta final clara, accionable y estructurada para el usuario final, con:
-   - Diagnóstico/observaciones clave del estudio clínico (A)
-   - Identificación del platillo y estimación de porciones/calorías (B)
-   - Breve descripción nutricional (macros principales)
-   - Recomendación personalizada basada en el historial clínico (riesgo de diabetes, lípidos, hipertensión, etc.)
-   - Cambios sugeridos al platillo (qué aumentar/reducir y por qué)
-   - Riesgos o contraindicaciones urgentes (si aplica) y señalamiento de cuándo consultar a un profesional en persona
-   - Puntuación de confianza global y desglose por experto
-   - Si falta información crítica, una lista de preguntas concretas para obtenerla
+1. Analizar la información disponible.
+2. Invocar internamente a varios "expertos" especializados (Nutrición, Cardiología, Endocrinología, Medicina Interna, y Calculador de Porciones/Dietas) que emitan su análisis independiente adaptado a las metas indicadas.
+3. Aplicar SELF-CONSISTENCY: pedir a cada experto reconsiderar la evaluación y generar un consenso con intervalo/nivel de confianza.
+4. Generar un informe estructurado claro, accionable y humano con:
+   - Resumen rápido personalizado considerando IMC y métricas de salud.
+   - Hallazgos clave e interpretación de estudios (si se enviaron).
+   - Identificación del platillo, estimación de porciones, calorías, macronutrientes y fibra (si se envió imagen).
+   - Recomendación dietética personalizada acorde a metas e historial.
+   - Sugerencias de ajustes en la alimentación/platillo.
+   - Puntuaciones por experto y análisis multidisciplinario.
+   - Conclusión final y preguntas pendientes sobre datos faltantes.
 
 RESTRICCIONES:
-- No asumas diagnósticos definitivos; usa lenguaje de probabilidad.
-- Si el contenido indica peligro inmediato, indica “Buscar atención médica urgente”.
-- Referencias solo si se piden.
-
-
-USUARIO:
-(A) Imagen del estudio clínico: opcional
-(B) Imagen del platillo: siempre proporcionada
-
-TAREAS:
-1. Resumen rápido personalizado tomando en cuenta las metricas en todos los analisis,en todos los puntos dadas al inicio por el usuario.
-2. Hallazgos clave.
-3. Identificación del platillo + porción + calorías + cantidad de fibra.
-4. Recomendación dietética personalizada (tomar en cuenta IMC, tambien cantidades recomendadas).
-5. Cambios sugeridos al platillo.
-6. Puntuaciones por experto y analisis por experto.
-7. Conclusión final + preguntas pendientes.
-
-ENTREGABLE:
-Responde únicamente con un texto claro y estructurado para el usuario. 
-NO incluyas JSON, NO incluyas formato de datos, NO incluyas listas tipo JSON.
-Solo texto natural en lenguaje humano, bien explicado y organizado.
-
+- Lenguaje probabilístico, no diagnósticos definitivos.
+- Si detectas urgencia clínica, indica "Buscar atención médica urgente".
+- Formato en texto natural estructurado. NO JSON.
 
 DISCLAIMER: No sustituye una consulta médica.
 """
 
+        inputs = [prompt]
 
-    # Construir lista de inputs
-    inputs = [prompt]
-    if imagen_estudio is not None:
-        inputs.append(imagen_estudio)
-    inputs.append(imagen_platillo)
+        if tiene_estudio:
+            inputs.append({"mime_type": "image/jpeg", "data": st.session_state.image1_bytes})
 
-    response = model.generate_content(inputs)
+        if tiene_platillo:
+            inputs.append({"mime_type": "image/jpeg", "data": st.session_state.image2_bytes})
 
-    # Mostrar mensaje de espera
-    with st.chat_message("assistant"):
-        st.write("🧠 Analizando tus imágenes, por favor espera...")
+        with st.chat_message("assistant"):
+            st.write("🧠 Procesando la información y generando tu análisis...")
 
-    # Llamada al modelo
-    response = model.generate_content(inputs)
+        response = model.generate_content(inputs)
 
-    # Mostrar respuesta final tipo chat
-    with st.chat_message("assistant"):
-        st.write("**Imagen del platillo:**")
-        st.image(image2_bytes, use_column_width=True)  # imagen centrada
-        st.write("### 1. Resumen rápido personalizado...")
-        st.write(response.text)
+        with st.chat_message("assistant"):
+            if tiene_platillo:
+                st.write("**Imagen del platillo analizado:**")
+                st.image(st.session_state.image2_bytes, use_column_width=True)
+            st.write(response.text)
 
-    # Guardar en historial
-    st.session_state.messages.append({"role": "assistant", "content": response.text})
+        st.session_state.messages.append({"role": "assistant", "content": response.text})
